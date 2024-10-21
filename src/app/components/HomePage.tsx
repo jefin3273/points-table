@@ -1,7 +1,6 @@
 "use client";
-
 import { useState, useEffect } from "react";
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
 import { motion } from "framer-motion";
 
 type Round = {
@@ -12,22 +11,44 @@ type Round = {
 
 type Group = {
   id: string;
+  Group_number: number;
   name: string;
   rounds: Round[];
 };
 
 export default function HomePage() {
   const [groups, setGroups] = useState<Group[]>([]);
-  const [socket, setSocket] = useState<ReturnType<typeof io> | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
+
+  const fetchData = async () => {
+    try {
+      const response = await fetch("/api/getData");
+      const data = await response.json();
+      setGroups(data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
 
   useEffect(() => {
+    fetchData();
+
     const initSocket = async () => {
       await fetch("/api/socket");
       const newSocket = io();
       setSocket(newSocket);
 
+      newSocket.on("connect", () => {
+        console.log("Connected to server");
+      });
+
       newSocket.on("pointsUpdated", (updatedGroups: Group[]) => {
+        console.log("Received updated groups:", updatedGroups);
         setGroups(updatedGroups);
+      });
+
+      newSocket.on("error", (error) => {
+        console.error("Socket error:", error);
       });
     };
 
@@ -35,6 +56,7 @@ export default function HomePage() {
 
     return () => {
       if (socket) {
+        console.log("Disconnecting socket");
         socket.disconnect();
       }
     };
@@ -49,28 +71,30 @@ export default function HomePage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-100 py-6 px-2 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-8">Points Table</h1>
-        <div className="bg-white shadow-xl rounded-lg overflow-hidden">
+        <h1 className="text-3xl sm:text-4xl font-bold text-center mb-6 text-black">
+          Points Table
+        </h1>
+        <div className="bg-white shadow-xl rounded-lg overflow-x-auto">
           <table className="min-w-full">
             <thead>
               <tr className="bg-gray-200">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Rank
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Group
                 </th>
                 {[1, 2, 3, 4, 5, 6].map((round) => (
                   <th
                     key={round}
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    Round {round}
+                    R{round}
                   </th>
                 ))}
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Total
                 </th>
               </tr>
@@ -84,10 +108,10 @@ export default function HomePage() {
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   className="bg-white"
                 >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
                     {index + 1}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
                     {group.name}
                   </td>
                   {[1, 2, 3, 4, 5, 6].map((round) => {
@@ -97,13 +121,13 @@ export default function HomePage() {
                     return (
                       <td
                         key={round}
-                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                        className="px-4 py-2 whitespace-nowrap text-sm text-gray-500"
                       >
                         {roundData ? roundData.points : "-"}
                       </td>
                     );
                   })}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
                     {getTotalPoints(group)}
                   </td>
                 </motion.tr>

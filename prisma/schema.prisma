@@ -8,10 +8,10 @@ generator client {
 }
 
 model Group {
-  id     String  @id @default(auto()) @id @map("_id")
-  Group_number   Int
-  name   String
-  rounds Round[]
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  groupNumber Int     @unique
+  name        String
+  rounds      Round[]
 }
 
 model Round {
@@ -20,4 +20,12 @@ model Round {
   points  Int
   group   Group  @relation(fields: [groupId], references: [id])
   groupId String @db.ObjectId
+
+  @@unique([groupId, number])
+}
+
+model User {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  username String @unique
+  password String
 }

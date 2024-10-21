@@ -1,10 +1,10 @@
 import React from "react";
-import Admin from "../components/admin";
+import CheckAdmin from "../components/CheckAdmin";
 
 const page = () => {
   return (
     <div>
-      <Admin />
+      <CheckAdmin />
     </div>
   );
 };

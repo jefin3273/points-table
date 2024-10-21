@@ -1,0 +1,23 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Group {
+  id     String  @id @default(auto()) @id @map("_id")
+  Group_number   Int
+  name   String
+  rounds Round[]
+}
+
+model Round {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  number  Int
+  points  Int
+  group   Group  @relation(fields: [groupId], references: [id])
+  groupId String @db.ObjectId
+}
